@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Funnel Analysis Case Study · Pragya Mishra</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #0e0e0e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --accent: #c0392b;
+    --accent2: #1a5276;
+    --mid: #5a5a5a;
+    --light: #a0a0a0;
+    --border: #d0c9bb;
+    --green: #1e8449;
+    --amber: #d68910;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 40px 36px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+  }
+  .byline {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--light);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.1;
+    color: var(--ink);
+    max-width: 600px;
+  }
+  h1 em { color: var(--accent); font-style: italic; }
+  .subtitle {
+    margin-top: 16px;
+    color: var(--mid);
+    max-width: 520px;
+    font-size: 15px;
+  }
+  .meta-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .pill {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .pill.red { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .stat-block { text-align: right; }
+  .stat-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 56px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label { font-size: 13px; color: var(--mid); margin-top: 4px; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+
+  /* ── SECTION ── */
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 80px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(24px, 3vw, 36px);
+    color: var(--ink);
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  h3 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  p { color: var(--mid); margin-bottom: 16px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── TWO COLUMN ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+  @media (max-width: 720px) {
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .masthead-inner { grid-template-columns: 1fr; }
+    .stat-block { text-align: left; }
+    .container { padding: 0 20px; }
+  }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: var(--cream);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    margin: 24px 0;
+  }
+  .callout.blue { border-left-color: var(--accent2); }
+  .callout.green { border-left-color: var(--green); }
+  .callout strong { color: var(--ink); }
+
+  /* ── FUNNEL VISUAL ── */
+  .funnel-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 32px 0;
+  }
+  .funnel-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 560px;
+    position: relative;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+  .funnel-step:hover { filter: brightness(0.93); }
+  .funnel-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .funnel-bar {
+    height: 52px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .funnel-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--light);
+    margin-top: 3px;
+    padding-left: 4px;
+  }
+  .funnel-num {
+    min-width: 90px;
+    text-align: right;
+    padding-right: 16px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .drop-arrow {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    padding: 2px 0;
+    max-width: 560px;
+    width: 100%;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── INSIGHT CARDS ── */
+  .insight-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+  .insight-card.blue::before { background: var(--accent2); }
+  .insight-card.green::before { background: var(--green); }
+  .insight-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .insight-num.blue { color: var(--accent2); }
+  .insight-num.green { color: var(--green); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--light);
+    border-bottom: 2px solid var(--border);
+    padding: 10px 12px;
+  }
+  td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--mid); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td strong { color: var(--ink); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .badge.high { background: #fde8e8; color: var(--accent); }
+  .badge.med { background: #fef3cd; color: #8a5a00; }
+  .badge.low { background: #e8f5e9; color: var(--green); }
+
+  /* ── CHART CONTAINER ── */
+  .chart-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .chart-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--light);
+    margin-bottom: 16px;
+  }
+
+  /* ── RECOMMENDATION ── */
+  .rec-item {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--border);
+    line-height: 1;
+  }
+  .rec-impact {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    border-radius: 100px;
+    padding: 2px 10px;
+    margin-bottom: 6px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--ink);
+    color: #fff;
+    text-align: center;
+    padding: 40px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--light);
+  }
+  .footer a { color: #fff; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 32px; }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: var(--light);
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── TOOLTIP ── */
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 10;
+    left: 50%; transform: translateX(-50%);
+    top: -44px;
+  }
+  .funnel-step:hover .tooltip-box { display: block; }
+
+  /* ── ANIMATION ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.5s ease both; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <div class="byline">Portfolio Case Study · Product Analytics</div>
+      <h1>Where did our users <em>drop?</em></h1>
+      <p class="subtitle">A B2C retail checkout funnel was quietly bleeding revenue across multiple steps. Leadership flagged it. I found where, why, and what to do about it — and the A/B test proved us right.</p>
+      <div class="meta-pills">
+        <span class="pill red">Funnel Analysis</span>
+        <span class="pill">A/B Testing</span>
+        <span class="pill">Cohort Segmentation</span>
+        <span class="pill">SQL · Python · Power BI</span>
+        <span class="pill">Pragya Mishra</span>
+      </div>
+    </div>
+    <div class="stat-block fade-up delay-2">
+      <div class="stat-big">+14%</div>
+      <div class="stat-label">Purchase conversion lift<br>post-intervention</div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. CONTEXT -->
+<section>
+  <div class="container">
+    <div class="section-label">01 · Context</div>
+    <div class="two-col">
+      <div>
+        <h2>The brief</h2>
+        <p>Leadership noticed purchase conversion had been declining for two consecutive quarters — and brought it to the product org. No one knew exactly where in the journey users were dropping. The funnel was broken somewhere between "browse" and "buy," but the dashboards at the time only showed the top-line number.</p>
+        <p>It landed on my plate with a fairly open brief: <strong>"Conversion is down. Tell us where and why."</strong> No pre-existing hypothesis, no scoped dataset. Just a declining metric and an expectation to figure it out.</p>
+        <div class="callout">
+          <strong>Dataset:</strong> 90 days of event-level clickstream data from a B2C retail platform (anonymised). ~4.5M events across 1.4M users. Supplemented with the public <a href="https://www.kaggle.com/datasets/mkechinov/ecommerce-behavior-data-from-multi-category-store" target="_blank" style="color:var(--accent2)">Multi-Category Store dataset (Kaggle)</a> to validate patterns.
+        </div>
+      </div>
+      <div>
+        <h3>My role</h3>
+        <p>End-to-end — I scoped the analysis, pulled the data (SQL on Redshift), cleaned and explored it (Python/Pandas), built the funnel and segmentation cuts, designed the experiment with the PM, and presented results to leadership. There was no analyst handing me a clean dataset. The messy parts were mine too.</p>
+        <h3 style="margin-top:24px">Timeline</h3>
+        <p>Initial analysis: ~6 days (data was messier than expected). Experiment design + alignment: 2 weeks. Results readout: 5 weeks post-launch.</p>
+        <h3 style="margin-top:24px">Stakeholders</h3>
+        <p>Product Manager, Growth Lead, Engineering Lead, VP Product.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. METHODOLOGY -->
+<section>
+  <div class="container">
+    <div class="section-label">02 · Methodology</div>
+    <h2>How I approached it</h2>
+    <div class="three-col" style="margin-top:28px">
+      <div class="insight-card">
+        <div style="font-size:28px;margin-bottom:12px">🔍</div>
+        <h3>1. Data Audit</h3>
+        <p style="font-size:14px">First thing I did — before writing a single funnel query — was audit the event data. Found missing cart events for ~8% of sessions and inconsistent session boundaries across device types. Fixed those first. A funnel built on bad event data gives you confident wrong answers.</p>
+      </div>
+      <div class="insight-card blue">
+        <div style="font-size:28px;margin-bottom:12px">🏗️</div>
+        <h3>2. Funnel Definition</h3>
+        <p style="font-size:14px">Spent half a day with the PM just aligning on definitions — what counts as "checkout started"? Does a product view require a minimum dwell time? We used a strict ordered funnel with a 24-hour session window. It gave more conservative numbers, but everyone trusted them.</p>
+      </div>
+      <div class="insight-card green">
+        <div style="font-size:28px;margin-bottom:12px">🔬</div>
+        <h3>3. Segmentation First</h3>
+        <p style="font-size:14px">The overall funnel looked "manageable" — about 2.7% end-to-end conversion. But averages hide everything. Once I cut by device, user tenure, and traffic source, the picture changed completely. The problem wasn't spread evenly. It was concentrated.</p>
+      </div>
+    </div>
+    <div class="callout blue" style="margin-top:28px">
+      <strong>Key call I made:</strong> I resisted pressure to share early numbers at day 2. The data wasn't clean yet and I knew a preliminary readout would anchor the team on wrong figures. I shared a "here's what I'm finding and when I'll have something solid" update instead — and it was the right call.
+    </div>
+  </div>
+</section>
+
+<!-- 3. FUNNEL -->
+<section>
+  <div class="container">
+    <div class="section-label">03 · The Funnel</div>
+    <div class="two-col">
+      <div>
+        <h2>Where users dropped</h2>
+        <p>Out of 1,400,000 users who visited the homepage over 90 days, only 38,200 completed a purchase — an overall conversion rate of <strong>2.73%</strong>. The funnel made it immediately clear this wasn't a single problem.</p>
+
+        <div class="funnel-wrap" id="funnelWrap">
+          <!-- steps rendered by JS -->
+        </div>
+      </div>
+      <div>
+        <h3>Reading the funnel</h3>
+        <p>This wasn't a single broken step — drop-off was spread across the journey. But two points stood out as fixable, not just expected:</p>
+        <div class="callout" style="margin-top:12px">
+          <strong>Homepage → Product View (57% drop)</strong><br>
+          Large, but partially expected — most traffic is browse. The concern here was that mobile drop was significantly worse (63%) than desktop (49%). A gap that size doesn't happen by accident.
+        </div>
+        <div class="callout blue" style="margin-top:12px">
+          <strong>Cart → Checkout (52% drop) ← Where I focused</strong><br>
+          This one was anomalous. These users had already picked a product. Half of them weren't making it to checkout. That's not a discovery problem — that's a friction problem.
+        </div>
+        <div class="callout green" style="margin-top:12px">
+          <strong>Checkout → Purchase (18% drop)</strong><br>
+          Acceptable. Once users reached checkout, most completed. This told me the payment flow wasn't the issue — it was everything before it.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DEEP DIVE -->
+<section>
+  <div class="container">
+    <div class="section-label">04 · Deep Dive</div>
+    <h2>Drilling into cart abandonment</h2>
+    <p style="max-width:620px">With cart → checkout as the primary drop-off, I ran three cuts of analysis to understand <em>who</em> was abandoning and <em>under what conditions</em>.</p>
+
+    <div class="tabs" style="margin-top:32px">
+      <div class="tab active" onclick="switchTab(this,'device')">By Device</div>
+      <div class="tab" onclick="switchTab(this,'source')">By Traffic Source</div>
+      <div class="tab" onclick="switchTab(this,'cohort')">By User Cohort</div>
+    </div>
+
+    <div class="tab-content active" id="tab-device">
+      <div class="two-col">
+        <div class="chart-box">
+          <div class="chart-title">Cart → Checkout conversion by device</div>
+          <canvas id="deviceChart" height="220"></canvas>
+        </div>
+        <div>
+          <h3>Finding</h3>
+          <p>Mobile users convert from cart to checkout at <strong>34%</strong> — versus <strong>61%</strong> on desktop. That's a 27 percentage point gap. Given mobile accounts for 58% of all sessions, this is the single largest addressable lever.</p>
+          <p>Session recordings (sampled) showed mobile users frequently abandoning when asked to create an account before checkout. Desktop users had a "guest checkout" shortcut more prominently surfaced.</p>
+          <div class="callout">
+            <strong>Hypothesis:</strong> Friction in the mobile checkout entry (mandatory sign-up prompt) is causing disproportionate mobile abandonment.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-source">
+      <div class="two-col">
+        <div class="chart-box">
+          <div class="chart-title">Cart → Checkout conversion by traffic source</div>
+          <canvas id="sourceChart" height="220"></canvas>
+        </div>
+        <div>
+          <h3>Finding</h3>
+          <p>Paid social traffic (Instagram, Facebook) has the lowest cart-to-checkout rate at <strong>28%</strong>, despite having reasonable add-to-cart rates. Organic and direct traffic converts at 2x that rate.</p>
+          <p>This suggests paid social audiences are more impulse-driven — they add to cart but lose intent or get distracted. The fix here is speed: reducing time between cart and payment.</p>
+          <div class="callout blue">
+            <strong>Hypothesis:</strong> Paid social users need a faster path — consider a "buy now" shortcut on product pages for retargeted users.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-cohort">
+      <div class="two-col">
+        <div class="chart-box">
+          <div class="chart-title">Cart → Checkout by user tenure</div>
+          <canvas id="cohortChart" height="220"></canvas>
+        </div>
+        <div>
+          <h3>Finding</h3>
+          <p>New users (first session) abandon at <strong>71%</strong> at the cart stage. Users who have purchased before abandon at only <strong>31%</strong>. The gap narrows significantly after just one prior purchase — suggesting trust and familiarity are the barriers, not product fit.</p>
+          <div class="callout green">
+            <strong>Hypothesis:</strong> New users need trust signals at the cart stage — reviews, security badges, easy return policy — to overcome first-purchase hesitation.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. EXPERIMENT -->
+<section>
+  <div class="container">
+    <div class="section-label">05 · Experiment Design</div>
+    <h2>The A/B test we ran</h2>
+    <p style="max-width:620px">Based on the mobile + new user findings, I worked with the PM and engineering to design a targeted experiment. We prioritised the mobile guest-checkout hypothesis as highest confidence and highest reach.</p>
+
+    <div style="margin-top:32px">
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Hypothesis</strong></td><td>Surfacing guest checkout more prominently on mobile will increase cart-to-checkout conversion for new users</td></tr>
+          <tr><td><strong>Control</strong></td><td>Existing mobile cart page — "Sign in to checkout" CTA prominent, guest option in small text below</td></tr>
+          <tr><td><strong>Variant</strong></td><td>"Continue as Guest" made equal prominence to sign-in; sign-in moved to a post-purchase prompt instead</td></tr>
+          <tr><td><strong>Primary metric</strong></td><td>Cart → Checkout conversion rate (mobile, new users)</td></tr>
+          <tr><td><strong>Guardrail metrics</strong></td><td>Account creation rate (floor: 60% of baseline), Revenue per session</td></tr>
+          <tr><td><strong>Audience</strong></td><td>New mobile users · 50/50 split · ~85,000 users/week in segment</td></tr>
+          <tr><td><strong>Power calculation</strong></td><td>MDE: 5%, α=0.05, power=0.8 → minimum 2 weeks runtime</td></tr>
+          <tr><td><strong>Pre-agreed stopping rule</strong></td><td>Call result at week 4 regardless — written into the experiment brief before launch</td></tr>
+          <tr><td><strong>Result</strong></td><td><span class="badge low">✓ Significant · called at week 4</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:24px">
+      <strong>The uncomfortable middle:</strong> By week 3, the variant was clearly trending positive — but we weren't at the pre-agreed runtime yet. Stakeholders started asking daily if we could call it early. I held the line. Not because I was being rigid, but because we'd agreed on week 4 for a reason — and changing the rules mid-experiment because the result looks good is how you get false confidence. We called it at week 4, significance held, and nobody questioned the result.
+    </div>
+
+    <div class="chart-box" style="margin-top:32px">
+      <div class="chart-title">Experiment results — cumulative conversion rate over time</div>
+      <canvas id="experimentChart" height="120"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- 6. RESULTS -->
+<section>
+  <div class="container">
+    <div class="section-label">06 · Results</div>
+    <h2>What moved</h2>
+    <div class="three-col" style="margin-top:28px">
+      <div class="insight-card">
+        <div class="insight-num">+22%</div>
+        <h3>Cart → Checkout (mobile, new users)</h3>
+        <p style="font-size:14px">Primary metric. Statistically significant (p=0.003). The variant outperformed control for 3 consecutive weeks before we called it.</p>
+      </div>
+      <div class="insight-card blue">
+        <div class="insight-num blue">+14%</div>
+        <h3>Overall purchase conversion</h3>
+        <p style="font-size:14px">The mobile segment is large enough that a 22% improvement in one step translated to a 14% lift in the top-level conversion metric.</p>
+      </div>
+      <div class="insight-card green">
+        <div class="insight-num green">−3%</div>
+        <h3>Account creation rate</h3>
+        <p style="font-size:14px">Within guardrail (−3% vs −40% threshold). Post-purchase sign-up prompt recovered ~67% of what was lost at cart entry.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:32px">
+      <strong>Revenue impact (estimated):</strong> Based on average order value and monthly purchase volumes, a sustained 14% conversion lift translates to approximately ₹1.8Cr in incremental annual GMV for this segment — without any additional acquisition spend.
+    </div>
+  </div>
+</section>
+
+<!-- 7. RECOMMENDATIONS -->
+<section>
+  <div class="container">
+    <div class="section-label">07 · What's Next</div>
+    <h2>Prioritised recommendations</h2>
+    <p style="max-width:600px; margin-bottom:32px">The guest-checkout experiment was one of three hypotheses. Here's the full prioritised backlog I handed to the PM after the analysis.</p>
+
+    <div>
+      <div class="rec-item">
+        <div class="rec-num">01</div>
+        <div>
+          <span class="rec-impact">✓ Shipped</span>
+          <h3>Guest checkout prominence on mobile</h3>
+          <p style="font-size:14px">Highest confidence, highest reach. Delivered +14% overall conversion. Fully shipped to 100% of users after experiment concluded.</p>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">02</div>
+        <div>
+          <span class="rec-impact">In roadmap · Q2</span>
+          <h3>Trust signals on cart page for new users</h3>
+          <p style="font-size:14px">Add review counts, security badge, and return policy summary to the cart page. Target: new users only (personalised). Expected MDE: ~8% on new-user conversion. Effort: Medium.</p>
+          <table style="margin-top:12px; font-size:13px">
+            <thead><tr><th>Metric</th><th>Baseline</th><th>Target</th></tr></thead>
+            <tbody>
+              <tr><td>New user cart → checkout</td><td>29%</td><td>37%</td></tr>
+              <tr><td>New user purchase rate</td><td>1.2%</td><td>1.5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-num">03</div>
+        <div>
+          <span class="rec-impact">Backlog · Q3</span>
+          <h3>"Buy now" fast-path for paid social traffic</h3>
+          <p style="font-size:14px">For retargeted paid social users, surface a direct product → payment shortcut bypassing cart. Requires engineering investment. Lower confidence given smaller addressable segment. Needs 6-week experiment window.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. REFLECTION -->
+<section>
+  <div class="container">
+    <div class="section-label">08 · Reflection</div>
+    <h2>What I'd do differently</h2>
+    <div class="two-col">
+      <div>
+        <h3>What worked well</h3>
+        <p>Segmenting before forming hypotheses. I didn't go in with a theory — I let the data suggest where to look. The overall funnel seemed "okay" until you cut by device, and then it was obvious. If I'd started with a hunch, I might have looked in the wrong place entirely.</p>
+        <p>Setting guardrail metrics and a stopping rule <em>before</em> the experiment launched. When stakeholders started asking to call it early at week 3, I could point to what we'd all agreed on. It's much easier to hold a pre-agreed boundary than to argue one in the moment when pressure is high.</p>
+      </div>
+      <div>
+        <h3>What I'd do differently</h3>
+        <p>The stopping rule was written into the brief — but it wasn't explicit enough about what "calling it early" would require. Stakeholders kept asking for results before we had significance, and while I held the line, it created unnecessary friction every week. Next time I'd add a clear clause: "Early call requires p &lt; 0.01 AND 3 consecutive weeks of consistent direction." That way the bar for an exception is spelled out upfront, not negotiated under pressure.</p>
+        <p>I'd also loop in engineering a week earlier in the hypothesis phase. We lost time because the variant required a UI change that turned out to be more complex than assumed — something an engineer in the room at day one would have flagged immediately.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>Case study by <strong style="color:#fff">Pragya Mishra</strong> · Analytics Lead · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5934302a312b3877292b383e20386d6b193e34383035773a3634">[email&#160;protected]</a></div>
+  <div style="margin-top:8px">Dataset: Kaggle Multi-Category E-Commerce · Analysis: SQL + Python · Visualisation: Power BI · Figures representative of dataset patterns</div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── FUNNEL DATA ────────────────────────────────────────────────────────────────
+const funnelSteps = [
+  { label: "Homepage Visit",    n: 1400000, color: "#1a5276" },
+  { label: "Product View",      n:  602000, color: "#1f618d" },
+  { label: "Add to Cart",       n:  241000, color: "#c0392b" },
+  { label: "Checkout Started",  n:  115700, color: "#c0392b" },
+  { label: "Purchase Complete", n:   38200, color: "#1e8449" },
+];
+
+function renderFunnel() {
+  const wrap = document.getElementById('funnelWrap');
+  wrap.innerHTML = '';
+  const max = funnelSteps[0].n;
+
+  funnelSteps.forEach((step, i) => {
+    const pct = Math.round(step.n / max * 100);
+
+    if (i > 0) {
+      const prev = funnelSteps[i - 1].n;
+      const drop = Math.round((1 - step.n / prev) * 100);
+      const arrow = document.createElement('div');
+      arrow.className = 'drop-arrow';
+      arrow.textContent = `▼  ${drop}% dropped here`;
+      wrap.appendChild(arrow);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'funnel-step';
+    row.innerHTML = `
+      <div class="tooltip-box">${step.n.toLocaleString()} users</div>
+      <div class="funnel-num">${(step.n / 1000).toFixed(0)}K</div>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:${pct}%;background:${step.color}">
+          ${step.label}
+        </div>
+        <div class="funnel-meta">${pct}% of total · ${step.n.toLocaleString()} users</div>
+      </div>`;
+    wrap.appendChild(row);
+  });
+}
+
+renderFunnel();
+
+// ── TABS ───────────────────────────────────────────────────────────────────────
+function switchTab(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ── CHARTS ─────────────────────────────────────────────────────────────────────
+const chartDefaults = {
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 11 }, color: '#a0a0a0' } },
+    y: { grid: { color: '#ede8dc' }, ticks: { font: { family: 'DM Mono', size: 11 }, color: '#a0a0a0' },
+         beginAtZero: true, max: 80,
+         callback: v => v + '%' }
+  }
+};
+
+new Chart(document.getElementById('deviceChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Mobile', 'Tablet', 'Desktop'],
+    datasets: [{
+      data: [34, 47, 61],
+      backgroundColor: ['#c0392b', '#d68910', '#1a5276'],
+      borderRadius: 4
+    }]
+  },
+  options: { ...chartDefaults, plugins: { legend: { display: false },
+    tooltip: { callbacks: { label: c => ` ${c.raw}% convert to checkout` } } } }
+});
+
+new Chart(document.getElementById('sourceChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Paid Social', 'Paid Search', 'Email', 'Organic', 'Direct'],
+    datasets: [{
+      data: [28, 39, 55, 58, 62],
+      backgroundColor: ['#c0392b','#e67e22','#d4ac0d','#1f618d','#1a5276'],
+      borderRadius: 4
+    }]
+  },
+  options: { ...chartDefaults, plugins: { legend: { display: false },
+    tooltip: { callbacks: { label: c => ` ${c.raw}% convert to checkout` } } } }
+});
+
+new Chart(document.getElementById('cohortChart'), {
+  type: 'bar',
+  data: {
+    labels: ['New (1st session)', '2–5 sessions', '6–20 sessions', '20+ sessions'],
+    datasets: [{
+      data: [29, 44, 56, 69],
+      backgroundColor: ['#c0392b','#e67e22','#1f618d','#1e8449'],
+      borderRadius: 4
+    }]
+  },
+  options: { ...chartDefaults, plugins: { legend: { display: false },
+    tooltip: { callbacks: { label: c => ` ${c.raw}% convert to checkout` } } } }
+});
+
+// Experiment chart
+const weeks = ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'];
+new Chart(document.getElementById('experimentChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      {
+        label: 'Control',
+        data: [33.1, 33.4, 33.0, 33.2, 33.3, 33.1],
+        borderColor: '#a0a0a0',
+        backgroundColor: 'transparent',
+        borderDash: [5,5],
+        pointRadius: 4,
+        tension: 0.3
+      },
+      {
+        label: 'Variant (Guest Checkout)',
+        data: [34.8, 37.2, 39.8, 40.3, 40.5, 40.6],
+        borderColor: '#1e8449',
+        backgroundColor: 'rgba(30,132,73,0.08)',
+        fill: true,
+        pointRadius: 4,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      legend: {
+        display: true,
+        labels: { font: { family: 'DM Mono', size: 11 }, color: '#5a5a5a', boxWidth: 20 }
+      },
+      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}%` } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 11 }, color:
